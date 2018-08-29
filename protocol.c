@@ -60,7 +60,6 @@ void timer_interrupt(void)
     reset_protocol();
 }
 
-
 static  void recieve_preamble(const uint8_t rxByte)
 {
     if (PREAMBLE_BYTE_VALUE == rxByte)
@@ -80,6 +79,7 @@ static void recieve_cnt(const uint8_t rxByte)
 {
     rxPacket.cnt = rxByte;
     prtclStatus.amountOfReceivedBytes = 2;
+    reset_timer();
 }
 
 static void recieve_type(const uint8_t rxByte)
@@ -88,6 +88,7 @@ static void recieve_type(const uint8_t rxByte)
     // if all values are  allowable types then:
     rxPacket.type = rxByte;
     prtclStatus.amountOfReceivedBytes = 3;
+    reset_timer();
 }
 
 static void recieve_lenght(const uint8_t rxByte)
@@ -95,17 +96,19 @@ static void recieve_lenght(const uint8_t rxByte)
     rxPacket.length = rxByte;
     prtclStatus.amountOfReceivedBytes = 4;
     prtclStatus.amountOfReceivedDataBytes = 0;
+    reset_timer();
 }
 
 static void recieve_data(const uint8_t rxByte)
 {
+    reset_timer();
     if (prtclStatus.amountOfReceivedDataBytes <= (rxPacket.length))
     {
         rxPacket.data[prtclStatus.amountOfReceivedDataBytes] = rxByte;
         prtclStatus.amountOfReceivedBytes++;
         prtclStatus.amountOfReceivedDataBytes++;
     }
-    if (prtclStatus.amountOfReceivedDataBytes == rxPacket.length)
+    if (prtclStatus.amountOfReceivedDataBytes == (rxPacket.length+1))
     {
         prtclStatus.readCrc = rxByte;
         prtclStatus.calcCrc = calc_crc( (uint8_t *) &rxPacket, prtclStatus.amountOfReceivedBytes-1);
@@ -118,7 +121,8 @@ static void recieve_data(const uint8_t rxByte)
         } else {
             reset_protocol();
         }
-    } else if ( rxPacket.length < prtclStatus.amountOfReceivedDataBytes) {
+    }
+    if ( (rxPacket.length+1) < prtclStatus.amountOfReceivedDataBytes) {
         reset_protocol();
     }
 }
@@ -139,10 +143,10 @@ void parse_byte(const uint8_t rxByte)
 
 void proc_pkt(const struct Packet * const inPacket)
 {
-    memcpy(&txPacket, inPacket, HEADER_LEN + inPacket->length);
+    memcpy(&txPacket, inPacket, HEADER_LEN + inPacket->length+1);
     txPacket.type |= (1<<7);
-    txPacket.data[(inPacket->length)-1] = calc_crc( (uint8_t *) &txPacket,
-                                                     HEADER_LEN+(inPacket->length)-1);
-    memcpy(uart1TxBuffer, &txPacket, (inPacket->length)+HEADER_LEN);
-    HAL_UART_Transmit_IT(&huart1, uart1TxBuffer, inPacket->length + HEADER_LEN);
+    txPacket.data[(inPacket->length)] = calc_crc( (uint8_t *) &txPacket,
+                                                     HEADER_LEN+(inPacket->length));
+    memcpy(uart1TxBuffer, &txPacket, HEADER_LEN+(inPacket->length)+1);
+    HAL_UART_Transmit_IT(&huart1, uart1TxBuffer, inPacket->length + HEADER_LEN+1);
 }
