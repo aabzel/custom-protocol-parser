@@ -24,10 +24,10 @@ enum input_pkt_status
 struct Packet
 {
     uint8_t preamble;       // preamble = 0xFF
-    uint8_t cnt;	    // packet counter
-    uint8_t type;	    // type of package
-    uint8_t length;	    // data field length
-    uint8_t data[255 + 1];  // data array, plus space for CRC8
+    uint8_t cnt;            // packet counter
+    uint8_t type;           // type of package
+    uint8_t length;         // only data field length (without CRC byte)
+    uint8_t data[255+1];    // data array   CRC8
 }; // 260 byte
 
 struct ProtocolStatus
