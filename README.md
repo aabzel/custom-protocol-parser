@@ -1,5 +1,5 @@
 # custom-protocol-parser
-custom protocol parser
+custom USART protocol parser
 
 Input packet structure:  
 | preamble |  cnt  |    type   |   length (data only) |   data and crc |  
