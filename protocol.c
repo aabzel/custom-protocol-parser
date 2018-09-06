@@ -113,10 +113,10 @@ static void recieve_data(const uint8_t rxByte)
         prtclStatus.readCrc = rxByte;
         prtclStatus.calcCrc = calc_crc( (uint8_t *) &rxPacket, prtclStatus.amountOfReceivedBytes-1);
         if ( prtclStatus.readCrc == prtclStatus.calcCrc ) {
-            // the package is accepted correctly
-            prtclStatus.rxFlag = PKT_RECEIVED; // show that packet has been received
+            //Perfectly! the package is accepted correctly.
+            memcpy(&fixRxPacket, &rxPacket, prtclStatus.amountOfReceivedBytes); 
+            prtclStatus.rxFlag = PKT_RECEIVED; // Show that packet has been received
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
-            memcpy(&fixRxPacket, &rxPacket, prtclStatus.amountOfReceivedBytes);
             reset_protocol();
         } else {
             reset_protocol();
@@ -148,5 +148,13 @@ void proc_pkt(const struct Packet * const inPacket)
     txPacket.data[(inPacket->length)] = calc_crc( (uint8_t *) &txPacket,
                                                      HEADER_LEN+(inPacket->length));
     memcpy(uart1TxBuffer, &txPacket, HEADER_LEN+(inPacket->length)+1);
+    g_flag_uart1Tx = 0;
     HAL_UART_Transmit_IT(&huart1, uart1TxBuffer, inPacket->length + HEADER_LEN+1);
+    //wait for the end of tx interruption
+    int iter = 0;
+    while(!g_flag_uart1Tx )
+    {
+      iter++;
+    }
+    
 }
