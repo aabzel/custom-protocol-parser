@@ -16,9 +16,10 @@ enum pkt_fields
 
 enum input_pkt_status 
 {
-  PKT_NOT_FOUND =0,
+  PKT_NOT_FOUND = 0,
   PKT_IN_PROGRESS = 1,
-  PKT_RECEIVED = 2
+  PKT_RECEIVED = 2,
+  PKT_PROC_RESP = 3
 }; 
 
 struct Packet
