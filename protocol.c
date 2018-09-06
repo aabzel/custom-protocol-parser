@@ -151,10 +151,8 @@ void proc_pkt(const struct Packet * const inPacket)
     g_flag_uart1Tx = 0;
     HAL_UART_Transmit_IT(&huart1, uart1TxBuffer, inPacket->length + HEADER_LEN+1);
     //wait for the end of tx interruption
-    int iter = 0;
     while(!g_flag_uart1Tx )
     {
-      iter++;
     }
     
 }
