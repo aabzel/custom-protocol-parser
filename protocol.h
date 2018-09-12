@@ -45,6 +45,8 @@ extern struct ProtocolStatus prtclStatus;
 extern struct Packet fixRxPacket;
 extern struct Packet txPacket;
 
+void suspend_timer(void);
+void resume_timer(void);
 void reset_timer(void);
 void timer_interrupt(void);
 void parse_byte(const uint8_t rxByte);
