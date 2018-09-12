@@ -45,6 +45,17 @@ static void reset_protocol(void)
     prtclStatus.readCrc = 1;
 }
 
+void suspend_timer(void)
+{
+    HAL_TIM_Base_Stop_IT(&htim1);
+}
+
+void resume_timer(void)
+{
+    HAL_TIM_Base_Start_IT(&htim1);
+    __HAL_TIM_SET_COUNTER(&htim1, 0);
+}
+
 void reset_timer(void)
 {
 // When the interrupt is triggered by the hardware timer, 
@@ -117,10 +128,10 @@ static void recieve_data(const uint8_t rxByte)
             memcpy(&fixRxPacket, &rxPacket, prtclStatus.amountOfReceivedBytes); 
             prtclStatus.rxFlag = PKT_RECEIVED; // Show that packet has been received
             HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
-            reset_protocol();
-        } else {
-            reset_protocol();
+            //
+            suspend_timer();
         }
+        reset_protocol();
     }
     if ( (rxPacket.length+1) < prtclStatus.amountOfReceivedDataBytes) {
         reset_protocol();
@@ -129,7 +140,7 @@ static void recieve_data(const uint8_t rxByte)
 
 // Function parse byte must be called in UART RX byte interruption.
 void parse_byte(const uint8_t rxByte)
-{
+{ 
     switch (prtclStatus.amountOfReceivedBytes)
     {
         case 0: recieve_preamble(rxByte); break;
@@ -140,7 +151,7 @@ void parse_byte(const uint8_t rxByte)
             recieve_data(rxByte); break;
     }
 }
-
+int iter=0;
 void proc_pkt(const struct Packet * const inPacket)
 {
     memcpy(&txPacket, inPacket, HEADER_LEN + inPacket->length+1);
@@ -148,11 +159,15 @@ void proc_pkt(const struct Packet * const inPacket)
     txPacket.data[(inPacket->length)] = calc_crc( (uint8_t *) &txPacket,
                                                      HEADER_LEN+(inPacket->length));
     memcpy(uart1TxBuffer, &txPacket, HEADER_LEN+(inPacket->length)+1);
-    g_flag_uart1Tx = 0;
-    HAL_UART_Transmit_IT(&huart1, uart1TxBuffer, inPacket->length + HEADER_LEN+1);
+    iter=0;
     //wait for the end of tx interruption
     while(!g_flag_uart1Tx )
     {
+      iter++;
     }
+    HAL_UART_Transmit_IT(&huart1, uart1TxBuffer, inPacket->length + HEADER_LEN+1);
+    g_flag_uart1Tx = 0;
+
+    resume_timer();
     
 }
